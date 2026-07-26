@@ -1,0 +1,7 @@
+# Ces fichiers sont consommés par un conteneur Linux : fins de ligne LF,
+# quel que soit le poste depuis lequel on édite.
+* text=auto eol=lf
+
+*.pdf binary
+*.png binary
+*.otf binary

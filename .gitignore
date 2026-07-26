@@ -1,0 +1,10 @@
+# .env est versionné volontairement : il ne contient qu'une adresse d'écoute
+# et un port, aucun secret. Si tu y ajoutes un jour une valeur sensible,
+# décommente la ligne suivante et crée un .env.example à la place.
+# .env
+
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+Thumbs.db

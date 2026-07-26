@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repérage TND — grille de repérage des écarts de développement (moins de 7 ans)</title>
+<style>
+  :root{
+    --bleu:#000091; --bleu-clair:#e3e3fd; --rouge:#e1000f; --rouge-clair:#ffe9e9;
+    --vert:#18753c; --vert-clair:#b8fec9; --orange:#b34000; --orange-clair:#ffe9e6;
+    --gris:#666; --gris-clair:#f6f6f6; --bordure:#ddd; --texte:#161616;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--texte);line-height:1.5;background:#fff}
+  header{background:var(--bleu);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:1.25rem;font-weight:700}
+  header p{margin:4px 0 0;font-size:.85rem;opacity:.9}
+  main{max-width:920px;margin:0 auto;padding:24px}
+  h2{font-size:1.05rem;border-bottom:2px solid var(--bleu);padding-bottom:6px;margin:32px 0 12px}
+  h3{font-size:.95rem;margin:20px 0 8px;color:var(--bleu)}
+  .avert{background:var(--orange-clair);border-left:4px solid var(--orange);padding:12px 16px;font-size:.85rem;margin:16px 0}
+  .avert strong{color:var(--orange)}
+  fieldset{border:1px solid var(--bordure);border-radius:4px;padding:12px 16px;margin:0 0 16px}
+  legend{font-weight:600;font-size:.9rem;padding:0 6px}
+  label.age{display:inline-block;margin:0 8px 8px 0}
+  label.age input{display:none}
+  label.age span{display:inline-block;padding:8px 14px;border:1px solid var(--bleu);border-radius:4px;cursor:pointer;font-size:.9rem}
+  label.age input:checked + span{background:var(--bleu);color:#fff;font-weight:600}
+  .naissance{font-size:.9rem;margin-bottom:12px}
+  .naissance input{padding:6px;border:1px solid var(--bordure);border-radius:4px;font-size:.9rem}
+  .item{display:flex;align-items:flex-start;gap:12px;padding:7px 0;border-bottom:1px solid #f0f0f0}
+  .item:last-child{border-bottom:none}
+  .item .lib{flex:1;font-size:.9rem}
+  .item .rep{display:flex;gap:4px;flex-shrink:0}
+  .item .rep label{cursor:pointer}
+  .item .rep input{display:none}
+  .item .rep span{display:inline-block;min-width:42px;text-align:center;padding:4px 8px;border:1px solid var(--bordure);border-radius:3px;font-size:.8rem;background:#fff}
+  .rep input[value="oui"]:checked + span{background:var(--vert-clair);border-color:var(--vert);color:var(--vert);font-weight:600}
+  .rep input[value="non"]:checked + span{background:var(--rouge-clair);border-color:var(--rouge);color:var(--rouge);font-weight:600}
+  .rep input[value="ne"]:checked + span{background:#eee;border-color:#999;color:#333;font-weight:600}
+  .domaine{background:var(--gris-clair);padding:6px 12px;font-weight:600;font-size:.85rem;margin-top:14px;border-left:3px solid var(--bleu)}
+  .compteur{float:right;font-weight:400;color:var(--gris)}
+  textarea{width:100%;min-height:70px;padding:8px;border:1px solid var(--bordure);border-radius:4px;font-family:inherit;font-size:.9rem}
+  #resultat{position:sticky;bottom:0;background:#fff;border-top:3px solid var(--bleu);padding:14px 24px;box-shadow:0 -4px 12px rgba(0,0,0,.08)}
+  #resultat .inner{max-width:920px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .verdict{font-weight:700;padding:8px 14px;border-radius:4px;font-size:.95rem}
+  .v-attente{background:var(--gris-clair);color:var(--gris)}
+  .v-non{background:var(--vert-clair);color:var(--vert)}
+  .v-oui{background:var(--rouge-clair);color:var(--rouge)}
+  .v-urgent{background:var(--rouge);color:#fff}
+  .detail{font-size:.82rem;color:var(--gris);flex:1;min-width:220px}
+  button{font-family:inherit;font-size:.85rem;padding:8px 14px;border-radius:4px;border:1px solid var(--bleu);background:#fff;color:var(--bleu);cursor:pointer}
+  button.primaire{background:var(--bleu);color:#fff}
+  button:hover{opacity:.85}
+  .precedent{margin-top:24px;border:1px dashed #bbb;border-radius:4px;background:#fafafa}
+  .precedent summary{cursor:pointer;padding:10px 14px;font-size:.88rem;font-weight:600;color:var(--gris)}
+  .precedent summary:hover{background:#f0f0f0}
+  .precedent .corps{padding:0 14px 14px}
+  .precedent .note{font-size:.8rem;color:var(--gris);background:#fff;border-left:3px solid #bbb;padding:8px 12px;margin:0 0 10px}
+  .precedent .domaine{background:#eee;border-left-color:#999}
+  .precedent .item .lib{color:#444}
+  .piedpage{font-size:.78rem;color:var(--gris);margin-top:40px;border-top:1px solid var(--bordure);padding-top:14px}
+  .piedpage a{color:var(--bleu)}
+  .masque{display:none}
+  @media print{
+    header{background:#fff;color:#000;border-bottom:2px solid #000}
+    #resultat{position:static;box-shadow:none}
+    .noprint,button{display:none!important}
+    .item .rep span{border:1px solid #999}
+    body{font-size:11pt}
+    fieldset{break-inside:avoid}
+    /* la tranche précédente s'imprime même repliée */
+    .precedent .corps{display:block!important}
+    .precedent{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Repérage des écarts inhabituels de développement — enfants de moins de 7 ans</h1>
+  <p>Grille de la Stratégie nationale TND — 2<sup>e</sup> édition, janvier 2024 · saisie locale, aucune donnée transmise</p>
+</header>
+
+<main>
+
+<div class="avert">
+  <p style="margin:0 0 8px"><strong>Ceci n'est pas le site officiel.</strong>
+  Il s'agit d'une reconstruction indépendante, mise en ligne à titre de dépannage,
+  sans lien avec la Délégation interministérielle à la stratégie nationale pour les TND,
+  le GNCRA ou aucune administration.</p>
+
+  <p style="margin:0 0 8px">Le contenu reprend le livret officiel « Détecter les signes d'un développement
+  inhabituel chez les enfants de moins de 7 ans », 2<sup>e</sup> édition, janvier 2024.
+  <strong>Le document de référence, et le seul à transmettre à la plateforme de coordination
+  et d'orientation, reste le livret officiel</strong>, téléchargeable sur handicap.gouv.fr
+  (rubrique « repérage précoce des troubles du neurodéveloppement »).</p>
+
+  <p style="margin:0 0 8px">Cet outil est une aide à la saisie. Il ne pose aucun diagnostic
+  et ne se substitue pas au jugement clinique.</p>
+
+  <p style="margin:0"><strong>Fidélité au livret :</strong> les 103 items d'âge et les
+  23 items transversaux ont été vérifiés un par un contre le PDF officiel, libellé et
+  domaine d'appartenance. Seule exception assumée : le livret imprime
+  « non apaisibles », corrigé ici en « non apaisables ».</p>
+</div>
+
+<h2>1 · Âge de l'enfant</h2>
+<div class="naissance noprint">
+  Date de naissance (facultatif, pour déterminer la tranche) :
+  <input type="date" id="ddn"> <span id="ageCalc"></span>
+</div>
+<div id="choixAge"></div>
+
+<div id="grille" class="masque">
+
+  <h2>2 · Éléments d'observation transversaux (quel que soit l'âge)</h2>
+  <div id="transversal"></div>
+
+  <h2>3 · Signes d'alerte <span id="titreAge"></span></h2>
+  <p style="font-size:.85rem;color:var(--gris);margin-top:-4px" id="regleAge"></p>
+  <div id="items"></div>
+
+  <div id="precedent"></div>
+
+  <h3>Commentaire libre</h3>
+  <textarea id="commentaire" placeholder="Items non évalués (raison technique) ou non évaluables du fait du comportement de l'enfant, observations, inquiétudes rapportées…"></textarea>
+</div>
+
+<div class="piedpage">
+  <p><strong>Critères d'orientation vers la PCO</strong> (livret officiel) : tranche 0-3 ans → 2 signes dans au moins
+  2 domaines de développement ; tranche 4-6 ans → 3 signes dans au moins 2 domaines.
+  Une <strong>régression des compétences acquises</strong> impose une orientation en urgence vers une consultation
+  hospitalière de pédiatrie ou de neuropédiatrie, indépendamment du score.</p>
+  <p>Un signe repéré uniquement dans les facteurs de haut risque ou les comportements particuliers ne constitue pas,
+  à lui seul, un motif d'orientation. En cas de score insuffisant mais de facteurs transversaux cumulés :
+  revoir l'enfant à 3-6 mois, ou contacter le médecin de la PCO.</p>
+  <p>Source : livret officiel PDF remplissable, handicap.gouv.fr —
+  <span style="word-break:break-all">https://handicap.gouv.fr/sites/handicap/files/2024-04/Brochure-reperage-precoce-TND-moins-de-7-ans-version-a-remplir.pdf</span><br>
+  Adresses des PCO : ameli.fr/content/adresses-et-telephones-plateformes-de-coordination-et-d-orientation-pco</p>
+  <p class="noprint">Aucune donnée n'est enregistrée ni transmise : tout est perdu à la fermeture de la page.</p>
+</div>
+
+</main>
+
+<div id="resultat">
+  <div class="inner">
+    <span class="verdict v-attente" id="verdict">Sélectionner une tranche d'âge</span>
+    <span class="detail" id="detail"></span>
+    <button class="noprint" onclick="window.print()">Imprimer</button>
+    <button class="noprint primaire" onclick="reinit()">Réinitialiser</button>
+  </div>
+</div>
+
+<script>
+const TRANSVERSAL = [
+  {titre:"Facteurs de risque (recommandations HAS 2020)", items:[
+    "Prématurité",
+    "Poids de naissance inférieur à 1500 g",
+    "Frère ou sœur ou parent de 1er degré ayant un TND",
+    "Exposition prénatale importante à un toxique (alcool, drogues) ou à un traitement médicamenteux (certains antiépileptiques, certaines substances psychoactives ou autres)",
+    "Affections néonatales sévères (anoxie néonatale, encéphalopathies aigües néonatales incluant convulsions, cardiopathies congénitales complexes opérées ou non, autre chirurgie néonatale lourde, anomalies cérébrales de pronostic incertain, microcéphalie, infections congénitales ou néonatales, ictère néonatal sévère)",
+    "Syndromes génétiques"
+  ]},
+  {titre:"Régression de compétences acquises", alerte:true, items:[
+    "Perte objective et persistante d'acquisition antérieure"
+  ]},
+  {titre:"Difficultés sévères et durables de sommeil et/ou d'alimentation", items:[
+    "Troubles durables et quasi quotidiens du sommeil (endormissement difficile et tardif, réveils nocturnes réguliers)",
+    "Grande sélectivité alimentaire (aversion pour certaines textures alimentaires et/ou refuse les morceaux, et/ou aversion pour les aliments d'une certaine couleur)",
+    "Difficultés de prises alimentaires (réflexe nauséeux massif, prise des biberons ou des repas excessivement longue et peu efficace…)"
+  ]},
+  {titre:"Profil sensoriel et sensorimoteur particulier", items:[
+    "Fascination pour les lumières et/ou objets qui tournent",
+    "Hyper – ou hypo – réactivité à certains sons et/ou textures et/ou odeurs",
+    "Indifférence ou réaction excessive à la douleur",
+    "Recherche de stimulations sensorielles (cutanées, lumineuses, olfactives…)"
+  ]},
+  {titre:"Comportements et intérêts inhabituels", items:[
+    "Comportement anormalement calme voire passif, bougeant très peu (hypo-mobilité) pour les enfants de moins de 24 mois",
+    "Exploration / utilisation inhabituelle des « objets » et de l'environnement",
+    "Mouvements répétitifs stéréotypés gestuels ou corporels (balancements, tournoiements, déambulations, battements des mains, mouvements des doigts devant les yeux…)"
+  ]},
+  {titre:"Difficultés à se contrôler et/ou à réguler ses émotions", items:[
+    // Le PDF officiel écrit « non apaisibles » (coquille) ; corrigé ici en « apaisables ».
+    "Intolérance exagérée au changement de l'environnement (réactions de peur et anxiété disproportionnées ou sans objet apparent, non apaisables et répétées)",
+    "Colères violentes, répétées, inconsolables et frustrations",
+    "Hyperactivité motrice incontrôlable (se met en danger)",
+    "Opposition forte et assez systématique aux adultes"
+  ]},
+  {titre:"Inquiétudes de l'entourage", items:[
+    "Inquiétude des parents",
+    "Inquiétude des professionnels de la petite enfance ou de l'école (comportement dans le collectif et/ou difficultés d'apprentissages pré-élémentaires)"
+  ]}
+];
+
+const AGES = [
+  {id:"6m", court:"6 mois", titre:"à 6 mois", plage:"de 6 à 11 mois inclus", min:6, max:11, seuil:2, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Tient sa tête stable sans osciller (attendu à 4 mois)",
+      "Tient assis en tripode, avec appui sur ses mains"]},
+    {nom:"Motricité fine (perception, coordination, cognition)", items:[
+      "Saisit un objet tenu à distance",
+      "Utilise une main ou l'autre, sans préférence",
+      "Cligne les yeux à l'approche d'un objet vers l'œil gauche ou l'œil droit"]},
+    {nom:"Langage", items:[
+      "Produit des sons variés (monosyllabes : « ba », « ga », « bo », « ma »…)",
+      "Tourne la tête pour regarder la personne qui parle"]},
+    {nom:"Socialisation", items:[
+      "Sourit en réponse au sourire de l'adulte (attendu à 3 mois)",
+      "Sollicite le regard de l'autre (par exemple, pleure quand on ne le regarde pas et s'arrête quand on le regarde)"]}
+  ]},
+  {id:"12m", court:"12 mois", titre:"à 12 mois", plage:"de 12 à 17 mois inclus", min:12, max:17, seuil:2, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Passe tout seul de la position couchée à la position assise",
+      "Tient assis seul sans appui et sans aide, dos bien droit",
+      "Utilise ses 4 membres pour se déplacer"]},
+    {nom:"Motricité fine (perception, coordination, cognition)", items:[
+      "Cherche l'objet que l'on vient de cacher (attendu à 9 mois)",
+      "Prend les petits objets entre le pouce et l'index (pince pulpaire)",
+      "Manipule des deux mains",
+      "Suit des yeux un objet en mouvement dans toutes les directions"]},
+    {nom:"Langage", items:[
+      "Réagit à son prénom (attendu à 9 mois)",
+      "Prononce des syllabes redoublées (ba-ba, ta-ta, pa-pa, etc.)",
+      "Comprend l'interdit du « non »"]},
+    {nom:"Socialisation", items:[
+      "Fait des gestes sociaux (au revoir, bravo)",
+      "Regarde ce que l'adulte lui montre avec le doigt (attention conjointe)"]}
+  ]},
+  {id:"18m", court:"18 mois", titre:"à 18 mois", plage:"de 18 à 23 mois inclus", min:18, max:23, seuil:2, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Se lève seul à partir du sol (transfert assis-debout sans aide)",
+      "Marche sans aide, pieds à plat (plus de cinq pas)"]},
+    {nom:"Motricité fine (perception, coordination, cognition)", items:[
+      "Empile deux cubes (à partir d'un modèle)",
+      "Introduit un petit objet dans un petit récipient"]},
+    {nom:"Langage oral", items:[
+      "Désigne un objet ou une image sur consigne orale (chat, ballon, voiture, etc.)",
+      "Comprend les consignes simples (ouvre les yeux, lève la jambe etc.)",
+      "Dit spontanément cinq mots (maman, dodo, papa, tiens, encore, etc.)"]},
+    {nom:"Socialisation", items:[
+      "Est capable d'exprimer un refus (dit « non », secoue la tête, repousse de la main)",
+      "Montre avec le doigt ce qui l'intéresse pour attirer l'attention de l'adulte"]}
+  ]},
+  {id:"24m", court:"24 mois", titre:"à 24 mois", plage:"de 24 à 35 mois inclus", min:24, max:35, seuil:2, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Court avec des mouvements coordonnés des bras",
+      "Monte les escaliers marche par marche (seul ou avec aide)",
+      "Shoote dans un ballon (après démonstration)"]},
+    {nom:"Motricité fine (perception, coordination, cognition)", items:[
+      "Empile cinq cubes (à partir d'un modèle)",
+      "Utilise seul la cuillère (même si peu efficace)",
+      "Peut pointer un objet ou une image qui vient d'être montré(e) sur la table ou dans un livre",
+      "Encastre des formes géométriques simples"]},
+    {nom:"Langage oral", items:[
+      "Dit spontanément plus de dix mots usuels",
+      "Associe deux mots (bébé dodo, maman partie)"]},
+    {nom:"Socialisation", items:[
+      "Participe à des jeux de faire semblant, d'imitation (dînette, garage)",
+      "S'intéresse aux autres enfants (crèche, fratrie, etc.)"]}
+  ]},
+  {id:"3a", court:"3 ans", titre:"à 3 ans", plage:"de 36 à 47 mois", min:36, max:47, seuil:2, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Monte l'escalier seul en alternant les pieds (avec la rampe)",
+      "Saute une marche"]},
+    {nom:"Motricité fine (perception, coordination, cognition)", items:[
+      "Empile huit cubes (à partir d'un modèle)",
+      "Copie un cercle à partir d'un modèle visuel",
+      "Enfile seul un vêtement (bonnet, pantalon, tee-shirt)"]},
+    {nom:"Langage oral", items:[
+      "Dit des phrases de trois mots (avec sujet, verbe et objet)",
+      "Utilise son prénom ou le « je » quand il parle de lui",
+      "Comprend une consigne orale simple (sans renforcement gestuel de l'adulte)"]},
+    {nom:"Socialisation", items:[
+      "Prend plaisir à jouer avec des enfants de son âge",
+      "Parvient à participer à une activité à deux ou à plusieurs"]}
+  ]},
+  {id:"4a", court:"4 ans", titre:"à 4 ans", plage:"de 48 à 59 mois", min:48, max:59, seuil:3, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Saute à pieds joints (au minimum sur place)",
+      "Monte les marches non tenu et en alternant les pieds",
+      "Lance un ballon de façon dirigée",
+      "Sait pédaler (tricycle ou vélo avec stabilisateur)",
+      "Parvient à se tenir tranquille et à rester assis quand c'est nécessaire (à table, à l'école…) pendant une durée adaptée au contexte"]},
+    {nom:"Motricité fine et praxies", items:[
+      "Dessine un bonhomme têtard",
+      "Copie une croix orientée selon le modèle (non dessiné devant lui)",
+      "Fait un pont avec trois cubes (après démonstration)",
+      "Enfile son manteau tout seul"]},
+    {nom:"Langage oral", items:[
+      "A un langage intelligible par une personne étrangère à la famille",
+      "Conjugue des verbes au présent",
+      "Pose la question « Pourquoi ? »",
+      "Peut répondre à des consignes avec deux variables (va chercher ton manteau dans ta chambre)"]},
+    {nom:"Cognition", items:[
+      "A des jeux imaginatifs avec des scénarios",
+      "Compte (dénombre) quatre objets",
+      "Sait trier des objets par catégories (couleurs, formes, etc.)",
+      "Parvient le plus souvent à terminer une activité ou un jeu à l'école ou à la maison (hors écran)"]},
+    {nom:"Socialisation", items:[
+      "Sait prendre son tour dans un jeu à deux ou à plusieurs"]}
+  ]},
+  {id:"5a", court:"5 ans", titre:"à 5 ans", plage:"de 60 à 71 mois", min:60, max:71, seuil:3, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Tient en équilibre sur un pied au moins cinq secondes sans appui",
+      "Marche sur une ligne (en mettant un pied devant l'autre)",
+      "Attrape un ballon avec les mains",
+      "Parvient à se tenir tranquille et à rester assis quand c'est nécessaire (à table, à l'école…)"]},
+    {nom:"Motricité fine et praxies", items:[
+      "Dessine un bonhomme (au moins deux ovales)",
+      "Copie son prénom en lettres majuscules (sur modèle)",
+      "Copie un carré (avec quatre coins distincts)"]},
+    {nom:"Langage oral", items:[
+      "Fait des phrases de six mots avec une grammaire (syntaxe) correcte",
+      "Comprend des éléments de topologie (dans/sur/derrière)",
+      "Nomme au moins trois couleurs"]},
+    {nom:"Cognition", items:[
+      "Décrit une scène sur une image (personnages, objets, actions)",
+      "Compte jusqu'à dix (comptine numérique)",
+      "Maintient son attention dix minutes sur une tâche qui l'intéresse, sans recadrage (les écrans ne comptent pas)"]},
+    {nom:"Socialisation", items:[
+      "Connaît le prénom de plusieurs de ses camarades",
+      "Participe à des jeux collectifs en respectant les règles"]}
+  ]},
+  {id:"6a", court:"6 ans", titre:"à 6 ans", plage:"de 72 à 83 mois", min:72, max:83, seuil:3, domaines:[
+    {nom:"Motricité globale, contrôle postural et locomotion", items:[
+      "Saute à cloche pied trois à cinq fois (sur place ou en avançant)",
+      "Court de manière fluide et sait s'arrêter net",
+      "Est capable de marcher sur les pointes ou sur les talons",
+      "Parvient à se tenir tranquille et à rester assis quand c'est nécessaire (à table, à l'école…)"]},
+    {nom:"Motricité fine et praxies", items:[
+      "Ferme seul son vêtement (boutons ou fermeture éclair)",
+      "Touche avec son pouce chacun des doigts de la même main après démonstration",
+      "Copie un triangle",
+      "Se lave et/ou s'essuie les mains sans assistance"]},
+    {nom:"Langage oral", items:[
+      "Peut raconter une petite histoire de manière structurée (avec début, milieu et fin - par exemple, histoire qu'on lui a lue, dessin animé qu'il a vu, événement qui lui est arrivé …)",
+      "Peut dialoguer en respectant le tour de parole",
+      "S'exprime avec des phrases construites (grammaticalement correctes)"]},
+    {nom:"Cognition", items:[
+      "Dénombre dix objets présentés (crayons, jetons, etc.)",
+      "Peut répéter dans l'ordre trois chiffres non sériés (5, 2, 9)",
+      "Reconnaît tous les chiffres (de 0 à 9)",
+      "Maintient son attention dix minutes sur une activité ou tâche qui l'intéresse, sans recadrage (les écrans ne comptent pas)",
+      "Est autonome pour réaliser spontanément des routines comprenant plusieurs tâches du début jusqu'à la fin (par exemple, au coucher, il se brosse les dents et se met en pyjama)"]},
+    {nom:"Socialisation", items:[
+      "Reconnaît l'état émotionnel d'autrui et réagit de manière ajustée (sait consoler son/sa camarade)",
+      "Sait se faire des amis et les garder",
+      "Montre des intérêts diversifiés par rapport à son âge (n'a pas d'intérêt restreint très particulier, pas d'attachement exclusif à un objet, ne parle pas toujours de la même chose, etc.)"]}
+  ]}
+];
+
+let ageActuel = null;
+let agePrecedent = null;
+
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+
+function ligne(nom, libelle, options){
+  const o = options || [["oui","Oui"],["non","Non"],["ne","N. év."]];
+  return '<div class="item"><div class="lib">'+esc(libelle)+'</div><div class="rep">'+
+    o.map(function(x){
+      return '<label><input type="radio" name="'+nom+'" value="'+x[0]+'"><span>'+x[1]+'</span></label>';
+    }).join('')+'</div></div>';
+}
+
+// --- choix de l'âge -----------------------------------------------------
+document.getElementById('choixAge').innerHTML = AGES.map(function(a,i){
+  return '<label class="age"><input type="radio" name="age" value="'+i+'"><span>'+a.court+'</span></label>';
+}).join('');
+
+document.getElementsByName('age').forEach(function(r){
+  r.addEventListener('change', function(){ construire(AGES[+this.value]); });
+});
+
+document.getElementById('ddn').addEventListener('change', function(){
+  const d = new Date(this.value);
+  if(isNaN(d)){ document.getElementById('ageCalc').textContent=''; return; }
+  const n = new Date();
+  let mois = (n.getFullYear()-d.getFullYear())*12 + (n.getMonth()-d.getMonth());
+  if(n.getDate() < d.getDate()) mois--;
+  const ans = Math.floor(mois/12);
+  document.getElementById('ageCalc').textContent = '→ '+mois+' mois ('+ans+' an'+(ans>1?'s':'')+' '+(mois%12)+' m)';
+  if(mois < 6){
+    document.getElementById('ageCalc').textContent += ' — grille non applicable avant 6 mois';
+    return;
+  }
+  if(mois > 83){
+    document.getElementById('ageCalc').textContent += ' — au-delà de 7 ans : utiliser le livret 7-12 ans';
+    return;
+  }
+  const idx = AGES.findIndex(function(a){ return mois>=a.min && mois<=a.max; });
+  if(idx>=0){
+    const radio = document.querySelector('input[name=age][value="'+idx+'"]');
+    radio.checked = true;
+    construire(AGES[idx]);
+  }
+});
+
+// --- construction de la grille -----------------------------------------
+function construire(age){
+  ageActuel = age;
+  document.getElementById('grille').classList.remove('masque');
+
+  document.getElementById('transversal').innerHTML = TRANSVERSAL.map(function(bloc,bi){
+    return '<fieldset><legend>'+esc(bloc.titre)+'</legend>'+
+      bloc.items.map(function(it,ii){
+        return ligne('t'+bi+'_'+ii, it, [["non","Non"],["oui","Oui"]]);
+      }).join('')+
+      (bloc.alerte ? '<p style="font-size:.8rem;color:var(--rouge);margin:8px 0 0">Si oui : orientation en urgence vers une consultation hospitalière de pédiatrie ou de neuropédiatrie.</p>' : '')+
+      '</fieldset>';
+  }).join('');
+
+  document.getElementById('titreAge').textContent = age.titre+' ('+age.plage+')';
+  document.getElementById('regleAge').textContent =
+    'Règle du livret : si '+age.seuil+' « non » dans 2 domaines différents, orienter vers la PCO.';
+
+  document.getElementById('items').innerHTML = age.domaines.map(function(d,di){
+    return '<div class="domaine" id="dom'+di+'">'+esc(d.nom)+'<span class="compteur" id="cpt'+di+'"></span></div>'+
+      d.items.map(function(it,ii){ return ligne('a'+di+'_'+ii, it); }).join('');
+  }).join('');
+
+  // Tranche précédente : le livret prévient que les signes ne sont pas relistés
+  // à chaque âge, et demande de les interroger « à partir de 4 ans, au moindre
+  // doute ». Consultable, jamais compté dans le score de la tranche en cours.
+  const idx = AGES.indexOf(age);
+  agePrecedent = idx > 0 ? AGES[idx-1] : null;
+  const zone = document.getElementById('precedent');
+
+  if(!agePrecedent){
+    zone.innerHTML = '';
+  } else {
+    const ouvert = age.seuil === 3 ? ' open' : '';   // ouvert d'office à partir de 4 ans
+    zone.innerHTML =
+      '<details class="precedent"'+ouvert+'>'+
+      '<summary>Signes d’alerte de la tranche précédente — '+esc(agePrecedent.titre)+
+      ' <span id="cptPrec"></span></summary>'+
+      '<div class="corps">'+
+      '<p class="note">Les signes ne sont pas relistés à chaque âge. Le livret recommande '+
+      'd’interroger la tranche précédente, en particulier à partir de 4 ans où les plages '+
+      's’élargissent et où un enfant en difficulté peut n’avoir aucun signe sur sa propre '+
+      'classe d’âge. <strong>Ces réponses ne sont pas comptées dans le score ci-dessous</strong> — '+
+      'à reporter en commentaire libre si elles éclairent la situation.</p>'+
+      agePrecedent.domaines.map(function(d,di){
+        return '<div class="domaine">'+esc(d.nom)+'</div>'+
+          d.items.map(function(it,ii){ return ligne('p'+di+'_'+ii, it); }).join('');
+      }).join('')+
+      '</div></details>';
+  }
+
+  document.querySelectorAll('#items input, #transversal input, #precedent input').forEach(function(i){
+    i.addEventListener('change', calculer);
+  });
+  calculer();
+  document.getElementById('grille').scrollIntoView({behavior:'smooth'});
+}
+
+// --- scoring ------------------------------------------------------------
+function calculer(){
+  if(!ageActuel) return;
+  let total = 0, domainesTouches = 0, repondus = 0, attendus = 0, detailDom = [];
+
+  ageActuel.domaines.forEach(function(d,di){
+    let nonDom = 0;
+    d.items.forEach(function(_,ii){
+      attendus++;
+      const sel = document.querySelector('input[name="a'+di+'_'+ii+'"]:checked');
+      if(sel){ repondus++; if(sel.value==='non') nonDom++; }
+    });
+    document.getElementById('cpt'+di).textContent = nonDom ? nonDom+' signe'+(nonDom>1?'s':'') : '';
+    if(nonDom>0){ domainesTouches++; detailDom.push(d.nom.split(' (')[0].split(',')[0]+' : '+nonDom); }
+    total += nonDom;
+  });
+
+  // tranche précédente : compté et affiché à part, hors score
+  let precNon = 0;
+  if(agePrecedent){
+    agePrecedent.domaines.forEach(function(d,di){
+      d.items.forEach(function(_,ii){
+        const s = document.querySelector('input[name="p'+di+'_'+ii+'"]:checked');
+        if(s && s.value === 'non') precNon++;
+      });
+    });
+    const c = document.getElementById('cptPrec');
+    if(c) c.textContent = precNon
+      ? '· ' + precNon + ' signe' + (precNon>1?'s':'') + ' relevé' + (precNon>1?'s':'') + ', hors score'
+      : '';
+  }
+
+  const regression = document.querySelector('input[name="t1_0"]:checked');
+  const urgent = regression && regression.value === 'oui';
+
+  const oriente = total >= ageActuel.seuil && domainesTouches >= 2;
+  const v = document.getElementById('verdict');
+  const dtl = document.getElementById('detail');
+
+  if(urgent){
+    v.className = 'verdict v-urgent';
+    v.textContent = 'Régression → orientation en URGENCE';
+    dtl.textContent = 'Perte d’acquisition signalée : consultation hospitalière de pédiatrie ou neuropédiatrie sans attendre, éventuellement avec l’appui de la PCO. ('+total+' signe'+(total>1?'s':'')+' par ailleurs.)';
+    return;
+  }
+
+  if(oriente){
+    v.className = 'verdict v-oui';
+    v.textContent = 'Critères d’orientation PCO atteints';
+  } else if(repondus < attendus){
+    v.className = 'verdict v-attente';
+    v.textContent = 'Grille incomplète — '+repondus+'/'+attendus;
+  } else {
+    v.className = 'verdict v-non';
+    v.textContent = 'Critères d’orientation non atteints';
+  }
+
+  let txt = total+' signe'+(total>1?'s':'')+' sur '+domainesTouches+' domaine'+(domainesTouches>1?'s':'')+
+            ' · seuil : '+ageActuel.seuil+' signes dans ≥ 2 domaines';
+  if(detailDom.length) txt += ' — '+detailDom.join(' · ');
+  if(precNon) txt += ' · + '+precNon+' sur la tranche précédente (hors score)';
+  if(!oriente && repondus === attendus && total > 0){
+    txt += ' — si facteurs transversaux cumulés : revoir à 3-6 mois ou contacter le médecin de la PCO.';
+  }
+  dtl.textContent = txt;
+}
+
+function reinit(){
+  if(!confirm('Effacer toutes les réponses ?')) return;
+  document.querySelectorAll('input[type=radio]').forEach(function(i){ i.checked=false; });
+  document.getElementById('ddn').value='';
+  document.getElementById('ageCalc').textContent='';
+  document.getElementById('commentaire').value='';
+  document.getElementById('precedent').innerHTML='';
+  document.getElementById('grille').classList.add('masque');
+  ageActuel=null; agePrecedent=null;
+  document.getElementById('verdict').className='verdict v-attente';
+  document.getElementById('verdict').textContent='Sélectionner une tranche d’âge';
+  document.getElementById('detail').textContent='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
